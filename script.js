@@ -1,6 +1,8 @@
-// ============= 1. IMPORT FIREBASE SDK (v12 modules) =============
+// ---------- 1. IMPORT FIREBASE MODULES ----------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+import {
+  getAnalytics
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -17,9 +19,10 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  where,
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// ============= 2. FIREBASE CONFIG & INIT =============
+// ---------- 2. FIREBASE CONFIG ----------
 const firebaseConfig = {
   apiKey: "AIzaSyD-WcE_anEIZ3lllvcZKR7DLeijeR7ervE",
   authDomain: "humahive-ats-b7770.firebaseapp.com",
@@ -35,7 +38,7 @@ getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ============= 3. DOM ELEMENT REFERENCES =============
+// ---------- 3. DOM ELEMENTS ----------
 const loginPage = document.getElementById("loginPage");
 const appPage = document.getElementById("appPage");
 
@@ -48,8 +51,13 @@ const loginError = document.getElementById("loginError");
 const currentUserInfo = document.getElementById("currentUserInfo");
 const logoutBtn = document.getElementById("logoutBtn");
 
+const statPositions = document.getElementById("statPositions");
+const statCandidates = document.getElementById("statCandidates");
+const statClients = document.getElementById("statClients");
+
 const createPositionForm = document.getElementById("createPositionForm");
 const positionTitle = document.getElementById("positionTitle");
+const positionClientSelect = document.getElementById("positionClientSelect");
 const positionsList = document.getElementById("positionsList");
 
 const createCandidateForm = document.getElementById("createCandidateForm");
@@ -58,65 +66,88 @@ const candidateEmail = document.getElementById("candidateEmail");
 const candidatePositionSelect = document.getElementById("candidatePositionSelect");
 const candidatesList = document.getElementById("candidatesList");
 
-let currentUserRole = null;
+const createClientForm = document.getElementById("createClientForm");
+const clientName = document.getElementById("clientName");
+const clientCode = document.getElementById("clientCode");
+const clientsList = document.getElementById("clientsList");
 
-// ============= 4. AUTH STATE LISTENER =============
+const tabButtons = document.querySelectorAll(".tab-btn");
+const tabs = document.querySelectorAll(".tab");
+
+let currentUser = null;       // Firebase user object
+let currentUserRole = null;   // "superAdmin" | "userAdmin" | "client"
+let currentClientId = null;   // for client role
+
+// ---------- 4. TABS ----------
+tabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    tabButtons.forEach((b) => b.classList.remove("active"));
+    tabs.forEach((t) => t.classList.remove("active"));
+
+    btn.classList.add("active");
+    const targetId = btn.dataset.tab;
+    document.getElementById(targetId).classList.add("active");
+  });
+});
+
+// ---------- 5. AUTH STATE ----------
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    // Not logged in
-    appPage.style.display = "none";
-    loginPage.style.display = "block";
+    currentUser = null;
+    currentUserRole = null;
+    currentClientId = null;
+    appPage.classList.add("hidden");
+    loginPage.classList.remove("hidden");
     return;
   }
 
-  // Logged in → fetch role from Firestore
+  currentUser = user;
+
+  // Fetch role info from Firestore
   const userRef = doc(db, "users", user.uid);
   const snap = await getDoc(userRef);
-
   if (!snap.exists()) {
-    loginError.textContent = "User record not found in Firestore.";
+    loginError.textContent = "User record not found in database.";
     await signOut(auth);
     return;
   }
 
   const data = snap.data();
   currentUserRole = data.role;
+  currentClientId = data.clientId || null;
 
-  currentUserInfo.textContent = `${currentUserRole.toUpperCase()} – ${data.email}`;
+  currentUserInfo.textContent =
+    `${currentUserRole.toUpperCase()} – ${data.email || user.email}`;
 
-  loginPage.style.display = "none";
-  appPage.style.display = "block";
+  loginPage.classList.add("hidden");
+  appPage.classList.remove("hidden");
 
-  // Start real-time listeners
-  subscribePositions();
-  subscribeCandidates();
+  applyRoleVisibility();
+  startRealtimeSubscriptions();
 });
 
-// ============= 5. LOGIN & LOGOUT HANDLERS =============
+// ---------- 6. LOGIN ----------
 loginBtn.addEventListener("click", async () => {
   loginError.textContent = "";
 
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
-  const roleSelected = loginRole.value;
+  const selectedRole = loginRole.value;
 
   if (!email || !password) {
-    loginError.textContent = "Please enter email and password.";
+    loginError.textContent = "Enter email and password.";
     return;
   }
 
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
-
-    // Check role from Firestore
     const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-    if (!userDoc.exists()) throw new Error("User record missing.");
+    if (!userDoc.exists()) throw new Error("User record missing in Firestore.");
     const data = userDoc.data();
 
-    if (data.role !== roleSelected) {
+    if (data.role !== selectedRole) {
       throw new Error("You are not allowed to log in with this role.");
     }
-
     // onAuthStateChanged will handle UI
   } catch (err) {
     console.error(err);
@@ -130,69 +161,174 @@ logoutBtn.addEventListener("click", async () => {
   loginPassword.value = "";
 });
 
-// ============= 6. REAL-TIME POSITIONS =============
-function subscribePositions() {
-  const q = query(
-    collection(db, "positions"),
-    orderBy("createdAt", "desc")
-  );
+// ---------- 7. ROLE-BASED VISIBILITY ----------
+function applyRoleVisibility() {
+  document.querySelectorAll(".role-guard").forEach((el) => {
+    const allowed = (el.dataset.roles || "").split(",");
+    if (!allowed.includes(currentUserRole)) {
+      el.closest(".tab")?.classList.add("hidden-section");
+    } else {
+      el.closest(".tab")?.classList.remove("hidden-section");
+    }
+  });
 
-  onSnapshot(q, (snapshot) => {
-    positionsList.innerHTML = "";
-    candidatePositionSelect.innerHTML = "";
+  // Hide Clients tab for non superAdmin
+  if (currentUserRole !== "superAdmin") {
+    document.querySelector('[data-tab="clientsTab"]').style.display = "none";
+  } else {
+    document.querySelector('[data-tab="clientsTab"]').style.display = "";
+  }
+}
 
-    snapshot.forEach((docSnap) => {
-      const pos = docSnap.data();
+// ---------- 8. REALTIME SUBSCRIPTIONS ----------
+let unsubPositions = null;
+let unsubCandidates = null;
+let unsubClients = null;
 
-      // List item for positions
+function startRealtimeSubscriptions() {
+  // Clients (for dropdowns + stats)
+  const clientsQ = query(collection(db, "clients"), orderBy("createdAt", "desc"));
+  unsubClients = onSnapshot(clientsQ, (snap) => {
+    clientsList.innerHTML = "";
+    positionClientSelect.innerHTML = '<option value="">Assign to client (optional)</option>';
+
+    let count = 0;
+    snap.forEach((docSnap) => {
+      const c = docSnap.data();
+      count++;
+
+      // list
       const li = document.createElement("li");
-      li.textContent = pos.title || "(Untitled position)";
-      positionsList.appendChild(li);
+      li.innerHTML = `<span>${c.name} <span class="badge">${c.code}</span></span>`;
+      clientsList.appendChild(li);
 
-      // Option for candidate form
+      // dropdown option
       const opt = document.createElement("option");
       opt.value = docSnap.id;
-      opt.textContent = pos.title || "(Untitled)";
+      opt.textContent = `${c.name} (${c.code})`;
+      positionClientSelect.appendChild(opt);
+    });
+    statClients.textContent = count;
+  });
+
+  // Positions
+  let positionsQuery;
+  if (currentUserRole === "client" && currentClientId) {
+    positionsQuery = query(
+      collection(db, "positions"),
+      where("clientId", "==", currentClientId),
+      orderBy("createdAt", "desc")
+    );
+  } else {
+    positionsQuery = query(
+      collection(db, "positions"),
+      orderBy("createdAt", "desc")
+    );
+  }
+
+  unsubPositions = onSnapshot(positionsQuery, (snap) => {
+    positionsList.innerHTML = "";
+    candidatePositionSelect.innerHTML = '<option value="">Select position</option>';
+
+    let count = 0;
+    snap.forEach((docSnap) => {
+      const p = docSnap.data();
+      count++;
+
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>${p.title} ${p.clientName ? `<span class="badge">${p.clientName}</span>` : ""}</span>
+        <span class="badge">${p.status || "open"}</span>
+      `;
+      positionsList.appendChild(li);
+
+      const opt = document.createElement("option");
+      opt.value = docSnap.id;
+      opt.textContent = p.title;
       candidatePositionSelect.appendChild(opt);
     });
+    statPositions.textContent = count;
+  });
+
+  // Candidates
+  let candidatesQuery;
+  if (currentUserRole === "client" && currentClientId) {
+    candidatesQuery = query(
+      collection(db, "candidates"),
+      where("clientId", "==", currentClientId),
+      orderBy("createdAt", "desc")
+    );
+  } else {
+    candidatesQuery = query(
+      collection(db, "candidates"),
+      orderBy("createdAt", "desc")
+    );
+  }
+
+  unsubCandidates = onSnapshot(candidatesQuery, (snap) => {
+    candidatesList.innerHTML = "";
+    let count = 0;
+
+    snap.forEach((docSnap) => {
+      const c = docSnap.data();
+      count++;
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>${c.name} – ${c.email} ${c.positionTitle ? `<span class="badge">${c.positionTitle}</span>` : ""}</span>
+        <span class="badge">${c.status || "new"}</span>
+      `;
+      candidatesList.appendChild(li);
+    });
+
+    statCandidates.textContent = count;
   });
 }
+
+// ---------- 9. CREATE DOCS ----------
+createClientForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (currentUserRole !== "superAdmin") return;
+
+  const name = clientName.value.trim();
+  const code = clientCode.value.trim();
+  if (!name || !code) return;
+
+  await addDoc(collection(db, "clients"), {
+    name,
+    code,
+    createdAt: serverTimestamp(),
+  });
+
+  clientName.value = "";
+  clientCode.value = "";
+});
 
 createPositionForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (currentUserRole === "client") return; // client cannot create positions
+
   const title = positionTitle.value.trim();
+  const clientId = positionClientSelect.value || null;
+
   if (!title) return;
 
-  try {
-    await addDoc(collection(db, "positions"), {
-      title,
-      status: "open",
-      createdAt: serverTimestamp(),
-    });
-    positionTitle.value = "";
-  } catch (err) {
-    console.error("Error adding position:", err);
+  let clientName = null;
+  if (clientId) {
+    const snap = await getDoc(doc(db, "clients", clientId));
+    if (snap.exists()) clientName = snap.data().name || null;
   }
-});
 
-// ============= 7. REAL-TIME CANDIDATES =============
-function subscribeCandidates() {
-  const q = query(
-    collection(db, "candidates"),
-    orderBy("createdAt", "desc")
-  );
-
-  onSnapshot(q, (snapshot) => {
-    candidatesList.innerHTML = "";
-
-    snapshot.forEach((docSnap) => {
-      const c = docSnap.data();
-      const li = document.createElement("li");
-      li.textContent = `${c.name} – ${c.email} (${c.positionTitle || "No position"})`;
-      candidatesList.appendChild(li);
-    });
+  await addDoc(collection(db, "positions"), {
+    title,
+    status: "open",
+    clientId,
+    clientName,
+    createdAt: serverTimestamp(),
   });
-}
+
+  positionTitle.value = "";
+  positionClientSelect.value = "";
+});
 
 createCandidateForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -200,30 +336,34 @@ createCandidateForm.addEventListener("submit", async (e) => {
   const name = candidateName.value.trim();
   const email = candidateEmail.value.trim();
   const positionId = candidatePositionSelect.value || null;
-
   if (!name || !email) return;
 
   let positionTitle = null;
-  try {
-    if (positionId) {
-      const posSnap = await getDoc(doc(db, "positions", positionId));
-      if (posSnap.exists()) {
-        positionTitle = posSnap.data().title || null;
-      }
+  let clientId = null;
+  let clientName = null;
+
+  if (positionId) {
+    const snap = await getDoc(doc(db, "positions", positionId));
+    if (snap.exists()) {
+      const p = snap.data();
+      positionTitle = p.title || null;
+      clientId = p.clientId || null;
+      clientName = p.clientName || null;
     }
-
-    await addDoc(collection(db, "candidates"), {
-      name,
-      email,
-      positionId,
-      positionTitle,
-      status: "new",
-      createdAt: serverTimestamp(),
-    });
-
-    candidateName.value = "";
-    candidateEmail.value = "";
-  } catch (err) {
-    console.error("Error adding candidate:", err);
   }
+
+  await addDoc(collection(db, "candidates"), {
+    name,
+    email,
+    positionId,
+    positionTitle,
+    clientId,
+    clientName,
+    status: "new",
+    createdAt: serverTimestamp(),
+  });
+
+  candidateName.value = "";
+  candidateEmail.value = "";
+  candidatePositionSelect.value = "";
 });
