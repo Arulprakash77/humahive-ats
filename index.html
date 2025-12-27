@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Humahive ATS Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- LOGIN -->
+  <section id="loginPage">
+    <h1>Humahive ATS Pro</h1>
+
+    <label>Login as:</label>
+    <select id="loginRole">
+      <option value="superAdmin">Super Admin</option>
+      <option value="userAdmin">User Admin</option>
+      <option value="client">Client</option>
+    </select>
+
+    <input id="loginEmail" type="email" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+
+    <button id="loginBtn">Enter Platform</button>
+    <p id="loginError" class="error"></p>
+  </section>
+
+  <!-- MAIN APP -->
+  <section id="appPage" style="display:none;">
+    <header>
+      <span id="currentUserInfo"></span>
+      <button id="logoutBtn">Logout</button>
+    </header>
+
+    <!-- Positions -->
+    <section>
+      <h2>Positions</h2>
+      <form id="createPositionForm">
+        <input id="positionTitle" placeholder="Position title">
+        <button type="submit">Add Position</button>
+      </form>
+      <ul id="positionsList"></ul>
+    </section>
+
+    <!-- Candidates -->
+    <section>
+      <h2>Candidates</h2>
+      <form id="createCandidateForm">
+        <input id="candidateName" placeholder="Candidate name">
+        <input id="candidateEmail" placeholder="Email">
+        <select id="candidatePositionSelect"></select>
+        <button type="submit">Add Candidate</button>
+      </form>
+      <ul id="candidatesList"></ul>
+    </section>
+  </section>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <!-- Your App Logic -->
+  <script src="script.js"></script>
+</body>
+</html>

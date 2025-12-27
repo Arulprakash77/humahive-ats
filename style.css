@@ -1,0 +1,215 @@
+/* Global reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #050816;
+  color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Layout */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 12px;
+}
+
+main,
+#loginPage,
+#appPage {
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* Headings */
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 24px 0 12px;
+}
+
+/* Card containers */
+.auth-container,
+section {
+  background: #0b1220;
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  margin-bottom: 18px;
+}
+
+/* Login card */
+#loginPage {
+  max-width: 420px;
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #22d3ee;
+  margin-bottom: 4px;
+}
+
+.auth-badge span {
+  font-size: 18px;
+}
+
+/* Labels & inputs */
+label {
+  font-size: 14px;
+  margin-bottom: 4px;
+  display: block;
+  color: #e5e7eb;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background: #020617;
+  color: #f9fafb;
+  font-size: 14px;
+  margin-bottom: 10px;
+  outline: none;
+}
+
+input::placeholder {
+  color: #6b7280;
+}
+
+input:focus,
+select:focus {
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.45);
+}
+
+/* Buttons */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #22d3ee, #6366f1);
+  color: #020617;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+button:hover {
+  opacity: 0.92;
+  transform: translateY(-0.5px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Error text */
+.error {
+  color: #f97373;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* Header in app */
+#appPage header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+#currentUserInfo {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+#logoutBtn {
+  background: #ef4444;
+  color: #f9fafb;
+}
+
+/* Sections: positions + candidates */
+section h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Forms inside sections */
+section form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+section form input,
+section form select {
+  flex: 1 1 220px;
+  margin-bottom: 0;
+}
+
+/* Lists */
+ul {
+  list-style: none;
+}
+
+#positionsList li,
+#candidatesList li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #111827;
+  background: #020617;
+  font-size: 14px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Small pill text */
+.badge {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body {
+    padding: 16px 8px;
+    align-items: stretch;
+  }
+
+  #appPage header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  section form {
+    flex-direction: column;
+  }
+}
