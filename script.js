@@ -1,4 +1,25 @@
-// 1) Firebase init
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyD-WcE_anEIZ3lllvcZKR7DLeijeR7ervE",
+    authDomain: "humahive-ats-b7770.firebaseapp.com",
+    projectId: "humahive-ats-b7770",
+    storageBucket: "humahive-ats-b7770.firebasestorage.app",
+    messagingSenderId: "730732275686",
+    appId: "1:730732275686:web:61326dbd81d9aeb3d71827",
+    measurementId: "G-0GXZJX9BXR"
+  };
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>// 1) Firebase init
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -152,3 +173,4 @@ createCandidateForm.addEventListener("submit", async (e) => {
   candidateName.value = "";
   candidateEmail.value = "";
 });
+
