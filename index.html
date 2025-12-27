@@ -1,70 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Humahive ATS Pro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- LOGIN -->
-  <section id="loginPage">
-    <h1>Humahive ATS Pro</h1>
+  <!-- LOGIN PAGE -->
+  <section id="loginPage" class="centered">
+    <div class="card">
+      <h1>Humahive ATS Pro</h1>
+      <p class="subtitle">Advanced Multi‑Role HR Platform</p>
 
-    <label>Login as:</label>
-    <select id="loginRole">
-      <option value="superAdmin">Super Admin</option>
-      <option value="userAdmin">User Admin</option>
-      <option value="client">Client</option>
-    </select>
+      <label for="loginRole">Login as:</label>
+      <select id="loginRole">
+        <option value="superAdmin">Super Admin</option>
+        <option value="userAdmin">User Admin</option>
+        <option value="client">Client</option>
+      </select>
 
-    <input id="loginEmail" type="email" placeholder="Email">
-    <input id="loginPassword" type="password" placeholder="Password">
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" placeholder="admin@humahive.com" />
 
-    <button id="loginBtn">Enter Platform</button>
-    <p id="loginError" class="error"></p>
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" placeholder="Password" />
+
+      <button id="loginBtn">Enter Platform</button>
+      <p id="loginError" class="error"></p>
+
+      <div class="hint">
+        <strong>Sample:</strong><br />
+        Super Admin: admin@humahive.com / admin123<br />
+        User Admin: useradmin@humahive.com / admin123<br />
+        Client: client@techcorp.com / client123
+      </div>
+    </div>
   </section>
 
-  <!-- MAIN APP -->
-  <section id="appPage" style="display:none;">
-    <header>
-      <span id="currentUserInfo"></span>
+  <!-- APP PAGE -->
+  <section id="appPage" class="app hidden">
+    <header class="app-header">
+      <div>
+        <h2>Humahive ATS Pro</h2>
+        <p id="currentUserInfo" class="muted"></p>
+      </div>
       <button id="logoutBtn">Logout</button>
     </header>
 
-    <!-- Positions -->
-    <section>
-      <h2>Positions</h2>
-      <form id="createPositionForm">
-        <input id="positionTitle" placeholder="Position title">
-        <button type="submit">Add Position</button>
-      </form>
-      <ul id="positionsList"></ul>
-    </section>
+    <!-- NAV TABS -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="dashboardTab">Dashboard</button>
+      <button class="tab-btn" data-tab="positionsTab">Positions</button>
+      <button class="tab-btn" data-tab="candidatesTab">Candidates</button>
+      <button class="tab-btn" data-tab="clientsTab">Clients</button>
+    </nav>
 
-    <!-- Candidates -->
-    <section>
-      <h2>Candidates</h2>
-      <form id="createCandidateForm">
-        <input id="candidateName" placeholder="Candidate name">
-        <input id="candidateEmail" placeholder="Email">
-        <select id="candidatePositionSelect"></select>
-        <button type="submit">Add Candidate</button>
-      </form>
-      <ul id="candidatesList"></ul>
-    </section>
+    <!-- DASHBOARD -->
+    <main class="tabs-wrapper">
+      <section id="dashboardTab" class="tab active">
+        <h3>Dashboard</h3>
+        <div class="stats-grid">
+          <div class="stat">
+            <p class="stat-label">Total Positions</p>
+            <p id="statPositions" class="stat-value">0</p>
+          </div>
+          <div class="stat">
+            <p class="stat-label">Total Candidates</p>
+            <p id="statCandidates" class="stat-value">0</p>
+          </div>
+          <div class="stat">
+            <p class="stat-label">Active Clients</p>
+            <p id="statClients" class="stat-value">0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- POSITIONS (Super Admin + User Admin) -->
+      <section id="positionsTab" class="tab">
+        <div class="tab-header">
+          <h3>Positions</h3>
+          <span class="role-guard" data-roles="superAdmin,userAdmin">(Super/User Admin only)</span>
+        </div>
+
+        <form id="createPositionForm" class="inline-form">
+          <input id="positionTitle" placeholder="Position title (e.g. Sr. Sales Manager)" />
+          <select id="positionClientSelect" class="short">
+            <option value="">Assign to client (optional)</option>
+          </select>
+          <button type="submit">Add Position</button>
+        </form>
+
+        <ul id="positionsList" class="list"></ul>
+      </section>
+
+      <!-- CANDIDATES (All roles see, client only own) -->
+      <section id="candidatesTab" class="tab">
+        <div class="tab-header">
+          <h3>Candidates</h3>
+        </div>
+
+        <form id="createCandidateForm" class="inline-form">
+          <input id="candidateName" placeholder="Candidate name" />
+          <input id="candidateEmail" placeholder="Email" />
+          <select id="candidatePositionSelect" class="short">
+            <option value="">Select position</option>
+          </select>
+          <button type="submit">Add Candidate</button>
+        </form>
+
+        <ul id="candidatesList" class="list"></ul>
+      </section>
+
+      <!-- CLIENTS (Super Admin only) -->
+      <section id="clientsTab" class="tab">
+        <div class="tab-header">
+          <h3>Clients</h3>
+          <span class="role-guard" data-roles="superAdmin">(Super Admin only)</span>
+        </div>
+
+        <form id="createClientForm" class="inline-form">
+          <input id="clientName" placeholder="Client company name" />
+          <input id="clientCode" placeholder="Client code (e.g. M2W-CHN-01)" />
+          <button type="submit">Add Client</button>
+        </form>
+
+        <ul id="clientsList" class="list"></ul>
+      </section>
+    </main>
   </section>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-
-  <!-- Your App Logic -->
-<script type="module" src="script.js"></script>
+  <!-- Your app logic (Firebase + ATS) -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
-
-
-
