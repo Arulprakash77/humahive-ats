@@ -1,36 +1,41 @@
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+// ============= 1. IMPORT FIREBASE SDK (v12 modules) =============
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy,
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyD-WcE_anEIZ3lllvcZKR7DLeijeR7ervE",
-    authDomain: "humahive-ats-b7770.firebaseapp.com",
-    projectId: "humahive-ats-b7770",
-    storageBucket: "humahive-ats-b7770.firebasestorage.app",
-    messagingSenderId: "730732275686",
-    appId: "1:730732275686:web:61326dbd81d9aeb3d71827",
-    measurementId: "G-0GXZJX9BXR"
-  };
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>// 1) Firebase init
+// ============= 2. FIREBASE CONFIG & INIT =============
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
+  apiKey: "AIzaSyD-WcE_anEIZ3lllvcZKR7DLeijeR7ervE",
+  authDomain: "humahive-ats-b7770.firebaseapp.com",
+  projectId: "humahive-ats-b7770",
+  storageBucket: "humahive-ats-b7770.firebasestorage.app",
+  messagingSenderId: "730732275686",
+  appId: "1:730732275686:web:61326dbd81d9aeb3d71827",
+  measurementId: "G-0GXZJX9BXR",
 };
-firebase.initializeApp(firebaseConfig);
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// 2) DOM elements
+// ============= 3. DOM ELEMENT REFERENCES =============
 const loginPage = document.getElementById("loginPage");
 const appPage = document.getElementById("appPage");
 
@@ -55,38 +60,64 @@ const candidatesList = document.getElementById("candidatesList");
 
 let currentUserRole = null;
 
-// 3) Auth: email + password
+// ============= 4. AUTH STATE LISTENER =============
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    // Not logged in
+    appPage.style.display = "none";
+    loginPage.style.display = "block";
+    return;
+  }
+
+  // Logged in → fetch role from Firestore
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+
+  if (!snap.exists()) {
+    loginError.textContent = "User record not found in Firestore.";
+    await signOut(auth);
+    return;
+  }
+
+  const data = snap.data();
+  currentUserRole = data.role;
+
+  currentUserInfo.textContent = `${currentUserRole.toUpperCase()} – ${data.email}`;
+
+  loginPage.style.display = "none";
+  appPage.style.display = "block";
+
+  // Start real-time listeners
+  subscribePositions();
+  subscribeCandidates();
+});
+
+// ============= 5. LOGIN & LOGOUT HANDLERS =============
 loginBtn.addEventListener("click", async () => {
   loginError.textContent = "";
+
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
-  const role = loginRole.value;
+  const roleSelected = loginRole.value;
 
   if (!email || !password) {
-    loginError.textContent = "Enter email and password.";
+    loginError.textContent = "Please enter email and password.";
     return;
   }
 
   try {
-    const cred = await auth.signInWithEmailAndPassword(email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
 
-    // Check user role from Firestore
-    const userDoc = await db.collection("users").doc(cred.user.uid).get();
-    if (!userDoc.exists) throw new Error("User not found in database");
-
+    // Check role from Firestore
+    const userDoc = await getDoc(doc(db, "users", cred.user.uid));
+    if (!userDoc.exists()) throw new Error("User record missing.");
     const data = userDoc.data();
-    if (data.role !== role) {
-      throw new Error("You are not authorized for this role.");
+
+    if (data.role !== roleSelected) {
+      throw new Error("You are not allowed to log in with this role.");
     }
 
-    currentUserRole = data.role;
-    currentUserInfo.textContent = `${data.role.toUpperCase()} – ${data.email}`;
-
-    loginPage.style.display = "none";
-    appPage.style.display = "block";
-
-    subscribePositions();
-    subscribeCandidates();
+    // onAuthStateChanged will handle UI
   } catch (err) {
     console.error(err);
     loginError.textContent = err.message;
@@ -94,83 +125,105 @@ loginBtn.addEventListener("click", async () => {
 });
 
 logoutBtn.addEventListener("click", async () => {
-  await auth.signOut();
-  appPage.style.display = "none";
-  loginPage.style.display = "block";
+  await signOut(auth);
   loginEmail.value = "";
   loginPassword.value = "";
 });
 
-// 4) Real‑time positions
+// ============= 6. REAL-TIME POSITIONS =============
 function subscribePositions() {
-  db.collection("positions")
-    .orderBy("createdAt", "desc")
-    .onSnapshot((snapshot) => {
-      positionsList.innerHTML = "";
-      candidatePositionSelect.innerHTML = "";
+  const q = query(
+    collection(db, "positions"),
+    orderBy("createdAt", "desc")
+  );
 
-      snapshot.forEach((doc) => {
-        const pos = doc.data();
-        const li = document.createElement("li");
-        li.textContent = pos.title;
-        positionsList.appendChild(li);
+  onSnapshot(q, (snapshot) => {
+    positionsList.innerHTML = "";
+    candidatePositionSelect.innerHTML = "";
 
-        const opt = document.createElement("option");
-        opt.value = doc.id;
-        opt.textContent = pos.title;
-        candidatePositionSelect.appendChild(opt);
-      });
+    snapshot.forEach((docSnap) => {
+      const pos = docSnap.data();
+
+      // List item for positions
+      const li = document.createElement("li");
+      li.textContent = pos.title || "(Untitled position)";
+      positionsList.appendChild(li);
+
+      // Option for candidate form
+      const opt = document.createElement("option");
+      opt.value = docSnap.id;
+      opt.textContent = pos.title || "(Untitled)";
+      candidatePositionSelect.appendChild(opt);
     });
+  });
 }
 
 createPositionForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!positionTitle.value.trim()) return;
+  const title = positionTitle.value.trim();
+  if (!title) return;
 
-  await db.collection("positions").add({
-    title: positionTitle.value.trim(),
-    status: "open",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-  });
-  positionTitle.value = "";
+  try {
+    await addDoc(collection(db, "positions"), {
+      title,
+      status: "open",
+      createdAt: serverTimestamp(),
+    });
+    positionTitle.value = "";
+  } catch (err) {
+    console.error("Error adding position:", err);
+  }
 });
 
-// 5) Real‑time candidates
+// ============= 7. REAL-TIME CANDIDATES =============
 function subscribeCandidates() {
-  db.collection("candidates")
-    .orderBy("createdAt", "desc")
-    .onSnapshot((snapshot) => {
-      candidatesList.innerHTML = "";
-      snapshot.forEach((doc) => {
-        const c = doc.data();
-        const li = document.createElement("li");
-        li.textContent = `${c.name} – ${c.email} (${c.positionTitle || "No position"})`;
-        candidatesList.appendChild(li);
-      });
+  const q = query(
+    collection(db, "candidates"),
+    orderBy("createdAt", "desc")
+  );
+
+  onSnapshot(q, (snapshot) => {
+    candidatesList.innerHTML = "";
+
+    snapshot.forEach((docSnap) => {
+      const c = docSnap.data();
+      const li = document.createElement("li");
+      li.textContent = `${c.name} – ${c.email} (${c.positionTitle || "No position"})`;
+      candidatesList.appendChild(li);
     });
+  });
 }
 
 createCandidateForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!candidateName.value.trim() || !candidateEmail.value.trim()) return;
 
+  const name = candidateName.value.trim();
+  const email = candidateEmail.value.trim();
   const positionId = candidatePositionSelect.value || null;
+
+  if (!name || !email) return;
+
   let positionTitle = null;
-  if (positionId) {
-    const pos = await db.collection("positions").doc(positionId).get();
-    positionTitle = pos.exists ? pos.data().title : null;
+  try {
+    if (positionId) {
+      const posSnap = await getDoc(doc(db, "positions", positionId));
+      if (posSnap.exists()) {
+        positionTitle = posSnap.data().title || null;
+      }
+    }
+
+    await addDoc(collection(db, "candidates"), {
+      name,
+      email,
+      positionId,
+      positionTitle,
+      status: "new",
+      createdAt: serverTimestamp(),
+    });
+
+    candidateName.value = "";
+    candidateEmail.value = "";
+  } catch (err) {
+    console.error("Error adding candidate:", err);
   }
-
-  await db.collection("candidates").add({
-    name: candidateName.value.trim(),
-    email: candidateEmail.value.trim(),
-    positionId,
-    positionTitle,
-    status: "new",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-  });
-
-  candidateName.value = "";
-  candidateEmail.value = "";
 });
-
