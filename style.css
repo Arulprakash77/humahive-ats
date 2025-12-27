@@ -1,120 +1,90 @@
-/* Global reset */
-* {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #050816;
-  color: #f5f5f5;
+  background: #020617;
+  color: #e5e7eb;
   min-height: 100vh;
 }
 
-/* Layout */
-body {
+/* Centered layout for login */
+.centered {
+  min-height: 100vh;
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding: 32px 12px;
+  padding: 24px;
 }
 
-main,
-#loginPage,
-#appPage {
+.card {
   width: 100%;
-  max-width: 1100px;
+  max-width: 420px;
+  background: #020617;
+  border-radius: 16px;
+  padding: 24px 24px 20px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-/* Headings */
 h1 {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
-h2 {
-  font-size: 20px;
-  margin: 24px 0 12px;
-}
-
-/* Card containers */
-.auth-container,
-section {
-  background: #0b1220;
-  border-radius: 12px;
-  padding: 20px 22px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+.subtitle {
+  font-size: 13px;
+  color: #9ca3af;
   margin-bottom: 18px;
 }
 
-/* Login card */
-#loginPage {
-  max-width: 420px;
-}
-
-.auth-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #22d3ee;
-  margin-bottom: 4px;
-}
-
-.auth-badge span {
-  font-size: 18px;
-}
-
-/* Labels & inputs */
 label {
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 4px;
   display: block;
-  color: #e5e7eb;
 }
 
 input,
 select {
   width: 100%;
   padding: 9px 10px;
-  border-radius: 8px;
-  border: 1px solid #374151;
+  border-radius: 10px;
+  border: 1px solid #4b5563;
   background: #020617;
-  color: #f9fafb;
+  color: #e5e7eb;
   font-size: 14px;
   margin-bottom: 10px;
   outline: none;
 }
 
-input::placeholder {
-  color: #6b7280;
-}
-
 input:focus,
 select:focus {
   border-color: #22d3ee;
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.45);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
 }
 
-/* Buttons */
 button {
-  cursor: pointer;
   border: none;
   border-radius: 999px;
   padding: 9px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #22d3ee, #6366f1);
+  background: linear-gradient(135deg, #22c55e, #6366f1);
   color: #020617;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
 }
 
 button:hover {
-  opacity: 0.92;
+  opacity: 0.95;
   transform: translateY(-0.5px);
 }
 
@@ -122,24 +92,45 @@ button:active {
   transform: translateY(0);
 }
 
-/* Error text */
 .error {
-  color: #f97373;
+  margin-top: 6px;
   font-size: 13px;
-  margin-top: 4px;
+  color: #fb7185;
 }
 
-/* Header in app */
-#appPage header {
+.hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+/* App layout */
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.hidden {
+  display: none;
+}
+
+.app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
 }
 
-#currentUserInfo {
-  font-size: 14px;
-  color: #e5e7eb;
+.app-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.muted {
+  font-size: 13px;
+  color: #9ca3af;
 }
 
 #logoutBtn {
@@ -147,69 +138,140 @@ button:active {
   color: #f9fafb;
 }
 
-/* Sections: positions + candidates */
-section h2 {
+/* Tabs */
+.tabs {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
 }
 
-/* Forms inside sections */
-section form {
+.tab-btn {
+  background: #020617;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  color: #e5e7eb;
+  font-size: 13px;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #22c55e, #22d3ee);
+  color: #020617;
+  border-color: transparent;
+}
+
+.tabs-wrapper {
+  background: #020617;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 18px 18px 20px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.75);
+}
+
+.tab {
+  display: none;
+}
+
+.tab.active {
+  display: block;
+}
+
+.tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tab-header h3 {
+  font-size: 18px;
+}
+
+.role-guard {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: radial-gradient(circle at top left, #22d3ee15, #020617);
+  border: 1px solid #111827;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* Forms & lists */
+.inline-form {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
-section form input,
-section form select {
-  flex: 1 1 220px;
+.inline-form input,
+.inline-form select {
   margin-bottom: 0;
 }
 
-/* Lists */
-ul {
+.inline-form .short {
+  max-width: 250px;
+}
+
+.list {
   list-style: none;
 }
 
-#positionsList li,
-#candidatesList li {
+.list li {
+  border-radius: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
   border: 1px solid #111827;
   background: #020617;
   font-size: 14px;
-  margin-bottom: 6px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
 
-/* Small pill text */
+/* Utility */
 .badge {
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 11px;
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  body {
-    padding: 16px 8px;
-    align-items: stretch;
-  }
-
-  #appPage header {
+  .app-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
 
-  section form {
+  .inline-form {
     flex-direction: column;
+  }
+
+  .inline-form .short {
+    max-width: none;
   }
 }
