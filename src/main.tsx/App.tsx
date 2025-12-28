@@ -1,3 +1,15 @@
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'  // ← App.tsx import
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
 import { useState } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
